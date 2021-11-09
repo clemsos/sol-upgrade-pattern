@@ -6,6 +6,7 @@ import './Box.sol';
 import './utils/Clone2Factory.sol';
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
+import "hardhat/console.sol";
 
 contract Deployer {
 
@@ -51,32 +52,44 @@ contract Deployer {
 
   }
 
-  // deploys BoxV1 with a proxy
-  function deployWithProxy() public returns(address) {
-    
+  // store proxy admin
+  ProxyAdmin proxyAdmin;
+  function createProxyAdmin() public returns(address) {
     // deploy ProxyAdmin
-    ProxyAdmin proxyAdmin = new ProxyAdmin();
+    proxyAdmin = new ProxyAdmin();
+    console.log("proxyAdmin", address(proxyAdmin));
+    return address(proxyAdmin);
+  }
+
+  // deploys BoxV1 with a proxy
+  TransparentUpgradeableProxy proxy;
+  function deployWithProxy() public returns(address) {
+    require(address(proxyAdmin) != address(0), "proxy admin not set");
 
     // deploy basic
     address boxV1 = deployBasic();
+    console.log("implementation boxV1", boxV1);
 
     // create a proxy
-    TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(boxV1, address(proxyAdmin), abi.encodePacked(uint16(0)));
+    bytes memory data;
+    // console.log("data", data);
+    proxy = new TransparentUpgradeableProxy(boxV1, address(proxyAdmin), data);
 
     // create new contract
     address newBox = address(proxy);
+    console.log("Deploying a proxy", newBox);
 
     // emit an event 
     emit BoxCreated(newBox);
-
     return newBox;
-
   }
 
-  /*
-  function upgradeBox() public returns(address) {
-    // upgrade via proxy to Boxv2
+  function upgradeWithProxy(address _impl) public returns(address) {
+    require(address(proxyAdmin) != address(0), "proxy admin not set");
+    require(address(proxy) != address(0), "proxy not set");
+    proxyAdmin.upgrade(proxy, _impl);
+    emit BoxUpgraded(address(proxy));
+    return address(proxy);
   }
-  */
 
 }
