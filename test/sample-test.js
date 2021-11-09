@@ -6,8 +6,23 @@ describe("Deployers", function () {
   let deployer 
   let Deployer 
   let box 
-  let Box 
+  let Box  
   
+  const updatedBoxWorks = async (tx) => {
+    const { events } = await tx.wait()
+    
+    // check if box instance works
+    const evt = events.find((v) => v.event === 'BoxUpgraded')
+    const { newBoxAddress } = evt.args
+
+    // check if box instance works
+    const newBox = await ethers.getContractAt("IBox", newBoxAddress);
+    expect(await newBox.retrieve()).to.equal(12);
+
+    await newBox.increment()
+    expect(await newBox.retrieve()).to.equal(13);
+  }
+
   const boxWorks = async (tx) => {
     const { events } = await tx.wait()
 
@@ -16,9 +31,25 @@ describe("Deployers", function () {
     const { newBoxAddress } = evt.args
 
     // check if box instance works
-    const newBox = Box.attach(newBoxAddress)
-    await newBox.store(12)
+    const [, creator] = await ethers.getSigners()
+
+    const newBox = await ethers.getContractAt("IBox", newBoxAddress)
+    const txStore = await newBox.connect(creator).store(12)
+    await txStore.wait()
     expect(await newBox.retrieve()).to.equal(12);
+  }
+
+  const grantBoxManagement = async (tx) => {
+    const [, creator] = await ethers.getSigners()
+    const { events } = await tx.wait()
+
+    // check if box instance exists
+    const evt = events.find((v) => v.event === 'BoxCreated')
+    const { newBoxAddress } = evt.args
+
+    const newBox = Box.attach(newBoxAddress)
+    const txRole = await newBox.initialize(creator.address) // setup perms
+    await txRole.wait()
   }
 
   describe("Deployer", function () {
@@ -31,11 +62,12 @@ describe("Deployers", function () {
       // deploy template
       Box = await ethers.getContractFactory("Box");
       box = await Box.deploy();
-      await box.deployed();
+      await box.deployed();      
     })
     describe("deployBasic", function () {
       it("Should deploy a Box contract properly", async function () {
         const tx = await deployer.deployBasic()
+        await grantBoxManagement(tx)
         await boxWorks(tx)
       });
     })
@@ -43,6 +75,7 @@ describe("Deployers", function () {
       it("Should deploy a Box contract properly", async function () {
         // deploy using minimal clone 
         const tx = await deployer.deployClone(box.address)
+        await grantBoxManagement(tx)
         await boxWorks(tx)
       });
     })
@@ -58,6 +91,7 @@ describe("Deployers", function () {
         // deploy using proxy 
         await deployer.createProxyAdmin()
         const tx = await deployer.deployWithProxy()
+        await grantBoxManagement(tx)
         await boxWorks(tx)
       });
     })
@@ -66,6 +100,7 @@ describe("Deployers", function () {
         // deploy using proxy 
         await deployer.createProxyAdmin()
         const txDeploy = await deployer.deployWithProxy()
+        await grantBoxManagement(txDeploy)
         await boxWorks(txDeploy)
 
         // upgrade 
@@ -73,20 +108,9 @@ describe("Deployers", function () {
         const boxV2 = await BoxV2.deploy();
         await boxV2.deployed();
         const tx = await deployer.upgradeWithProxy(boxV2.address)
-
-        // check if box instance exists
-        const {events} = await tx.wait()
-        const evt = events.find((v) => v.event === 'BoxUpgraded')
-        const { newBoxAddress } = evt.args
-
-        // check if box instance works
-        const newBox = BoxV2.attach(newBoxAddress)
-        await newBox.store(12)
-        expect(await newBox.retrieve()).to.equal(12);
         
-        await newBox.increment()
-        expect(await newBox.retrieve()).to.equal(13);
-
+        // check if box instance exists
+        await updatedBoxWorks(tx)
       });
       it("Should fails if proxy has not been init", async function () {
         await deployer.createProxyAdmin()
@@ -104,16 +128,18 @@ describe("Deployers", function () {
       const [, creator, manager] = await ethers.getSigners()
       Box = await ethers.getContractFactory("Box");
       box = await upgrades.deployProxy(Box, [creator.address])
-      expect(await box.isProxyManager(creator.address)).to.equal(true)
+      expect(await box.isBoxManager(creator.address)).to.equal(true)
 
       // can add roles
-      await box.connect(creator).addProxyManager(manager.address)
-      expect(await box.isProxyManager(manager.address)).to.equal(true)
+      await box.connect(creator).addBoxManager(manager.address)
+      expect(await box.isBoxManager(manager.address)).to.equal(true)
     });
   })
 
-  describe.only("ProxyDeployer", function () {
+  describe("ProxyDeployer", async () => {
+    let creator
     beforeEach(async () => {
+      ;[, creator] = await ethers.getSigners()
       // deploy 
       Deployer = await ethers.getContractFactory("ProxyDeployer");
       deployer = await Deployer.deploy();
@@ -125,8 +151,26 @@ describe("Deployers", function () {
       await box.deployed();
     })
     it("Should deploy a Box contract properly", async function () {
-      const tx = await deployer.deployBasic()
+      const tx = await deployer.deployBoxWithProxy(creator.address)
       await boxWorks(tx)
+    });
+    it("Should fails to upgrade without proxy", async function () {
+      await expect(
+        deployer.upgradeBox()
+      ).to.be.revertedWith("proxy not set");
+    });
+    it("Should disallow non-managers to upgrade", async function () {
+      const [, , signer] = await ethers.getSigners()
+      await deployer.deployBoxWithProxy(creator.address)
+      await expect(
+        deployer.connect(signer).upgradeBox()
+      ).to.be.revertedWith("you are not a BoxProxy manager");
+    });
+    it("Should allow managers to upgrade", async function () {
+      const initTx = await deployer.deployBoxWithProxy(creator.address)
+      await boxWorks(initTx)
+      const tx = await deployer.connect(creator).upgradeBox()
+      await updatedBoxWorks(tx)
     });
   })
 });

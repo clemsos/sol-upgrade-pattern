@@ -13,4 +13,10 @@ interface IBox {
     function version() external view returns (uint256);
 
     function increment() external view returns (uint256);
+
+    // roles
+    function BOX_MANAGER_ROLE() external pure returns (bytes32);
+    function addBoxManager(address account) external;
+    function isBoxManager(address account) external view returns (bool);
+
 }
