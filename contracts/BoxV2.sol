@@ -1,8 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
+import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
+import './mixins/Roles.sol';
 
-contract BoxV2 {
+contract BoxV2 is Initializable, Roles {
     uint256 private _value;
+
+    function initialize(address payable _creator) public initializer() {
+        Roles._initialize(_creator);
+    }
 
     // Emitted when the stored value changes
     event ValueChanged(uint256 value);
