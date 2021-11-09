@@ -6,12 +6,10 @@ import "hardhat/console.sol";
 
 contract Box is Initializable, BoxManagerRole {
     uint256 private _value;
-    address private _proxyOwner;
 
     function initialize(address _creator) public initializer() {
         // owner of the contract logic
         BoxManagerRole._initialize(_creator);
-        console.log("Box contract initiliazed with creator", _creator);
     }
 
     // Emitted when the stored value changes

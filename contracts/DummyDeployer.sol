@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.so
 import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import "hardhat/console.sol";
 
-contract Deployer {
+contract DummyDeployer {
 
   using Clone2Factory for address;
 

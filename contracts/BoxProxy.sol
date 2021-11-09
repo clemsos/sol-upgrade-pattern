@@ -14,6 +14,8 @@ contract BoxProxy is ERC1967Proxy {
   function upgradeTo(address _impl, address _sender) public {
     require( isBoxProxyManager(_sender) == true, 'you are not a BoxProxy manager');
     _upgradeToAndCall(_impl, bytes(""), false);
+    console.log('new _impl', _impl);
+    // _upgradeTo(_impl);
   }
 
   function isBoxProxyManager(address _sender) public view returns (bool){

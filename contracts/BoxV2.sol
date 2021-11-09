@@ -2,11 +2,13 @@
 pragma solidity ^0.8.0;
 import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import './mixins/BoxManagerRole.sol';
+import "hardhat/console.sol";
 
 contract BoxV2 is Initializable, BoxManagerRole {
     uint256 private _value;
 
-    function initialize(address payable _creator) public initializer() {
+    function initialize(address _creator) public initializer() {
+        // owner of the contract logic
         BoxManagerRole._initialize(_creator);
     }
 
@@ -24,13 +26,13 @@ contract BoxV2 is Initializable, BoxManagerRole {
         return _value;
     }
 
-    // Increments the stored value by 1
-    function increment() public {
-        _value = _value + 1;
-        emit ValueChanged(_value);
-    }
-
     function version() public pure returns (uint256) {
         return 2;
+    }
+
+    // Increments the stored value by 1
+    function increment() public onlyBoxManager {
+        _value = _value + 1;
+        emit ValueChanged(_value);
     }
 }
