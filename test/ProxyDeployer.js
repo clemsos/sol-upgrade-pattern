@@ -83,7 +83,7 @@ describe("ProxyDeployer", function () {
     const proxy = await boxWorks(tx)
     await expect(
       deployer.connect(signer).upgradeBox(proxy.address, 2)
-    ).to.be.revertedWith("you are not a BoxProxy manager");
+    ).to.be.revertedWith("you are not a proxy manager");
   });
   
   it("should set main contract as ProxyAdmin owner", async function () {

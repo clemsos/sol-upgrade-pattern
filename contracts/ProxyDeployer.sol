@@ -2,9 +2,6 @@
 pragma solidity ^0.8.0;
 
 import './IBox.sol';
-import './Box.sol';
-import './BoxV2.sol';
-import './BoxProxyAdmin.sol';
 import 'hardhat/console.sol';
 
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
@@ -21,7 +18,7 @@ contract ProxyDeployer {
 
   // proxys
   address public proxyAdminAddress;
-  BoxProxyAdmin private proxyAdmin;
+  ProxyAdmin private proxyAdmin;
 
   // templates
   mapping(address => uint16) public versions;
@@ -40,7 +37,7 @@ contract ProxyDeployer {
   }
 
   function _deployProxyAdmin() private returns(address) {
-    proxyAdmin = new BoxProxyAdmin();
+    proxyAdmin = new ProxyAdmin();
     proxyAdminAddress = address(proxyAdmin);
     emit ProxyAdminDeployed(proxyAdminAddress);
     return address(proxyAdmin);
@@ -61,7 +58,7 @@ contract ProxyDeployer {
 
   function upgradeBox(address payable _proxyAddress, uint16 version) public returns(address){
     require(_proxyAddress != address(0), "proxy can not be 0x");
-    require( isBoxProxyManager(_proxyAddress, msg.sender) == true, 'you are not a BoxProxy manager');
+    require( isBoxProxyManager(_proxyAddress, msg.sender) == true, 'you are not a proxy manager');
 
     address impl = impls[version];
     TransparentUpgradeableProxy proxy = TransparentUpgradeableProxy(_proxyAddress);
