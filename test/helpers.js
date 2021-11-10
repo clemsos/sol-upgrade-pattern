@@ -10,11 +10,12 @@ const boxWorks = async (tx) => {
 
   // check if box instance works
   const [, creator] = await ethers.getSigners()
-
-  const newBox = await ethers.getContractAt("IBox", newBoxAddress)
-  const txStore = await newBox.connect(creator).store(12)
+  const newBox = await ethers.getContractAt("IBox", newBoxAddress, creator)
+  const txStore = await newBox.store(12)
   await txStore.wait()
   expect(await newBox.retrieve()).to.equal(12);
+
+  return newBox
 }
 
 const updatedBoxWorks = async (tx) => {

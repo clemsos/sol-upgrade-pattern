@@ -14,7 +14,7 @@ contract DummyDeployer {
 
   // Events
   event BoxCreated(address indexed newBoxAddress);
-  event BoxUpgraded(address indexed newBoxAddress);
+  event BoxUpgraded(address indexed boxAddress);
 
   // fake (almost) random number
   function _getSalt() private view
@@ -57,31 +57,22 @@ contract DummyDeployer {
   function createProxyAdmin() public returns(address) {
     // deploy ProxyAdmin
     proxyAdmin = new ProxyAdmin();
-    console.log("proxyAdmin", address(proxyAdmin));
     return address(proxyAdmin);
   }
 
   // deploys BoxV1 with a proxy
   TransparentUpgradeableProxy proxy;
-  function deployWithProxy() public returns(address) {
+  function deployWithProxy(address _impl) public returns(address) {
+    require(_impl != address(0), "implementation can not be 0x");
     require(address(proxyAdmin) != address(0), "proxy admin not set");
 
-    // deploy basic
-    address boxV1 = deployBasic();
-    console.log("implementation boxV1", boxV1);
-
     // create a proxy
-    bytes memory data;
-    // console.log("data", data);
-    proxy = new TransparentUpgradeableProxy(boxV1, address(proxyAdmin), data);
-
-    // create new contract
-    address newBox = address(proxy);
-    console.log("Deploying a proxy", newBox);
+    bytes memory data = abi.encodeWithSignature('initialize(address)', msg.sender);
+    proxy = new TransparentUpgradeableProxy(_impl, address(proxyAdmin), data);
 
     // emit an event 
-    emit BoxCreated(newBox);
-    return newBox;
+    emit BoxCreated(address(proxy));
+    return address(proxy);
   }
 
   function upgradeWithProxy(address _impl) public returns(address) {
