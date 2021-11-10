@@ -23,19 +23,27 @@ contract ProxyDeployer {
   ProxyAdmin private proxyAdmin;
 
   // templates
-  mapping(address => uint16) public versions;
-  mapping(uint16 => address) public impls;
+  mapping(address => uint16) private _versions;
+  mapping(uint16 => address) private _impls;
 
   constructor() {
     _deployProxyAdmin();
     _admin = msg.sender;
   }
+
+  function versions(address _impl) external view returns(uint16) {
+    return _versions[_impl];
+  }
+  
+  function impls(uint16 _version) external view returns(address) {
+    return _impls[_version];
+  }
   
   function addImpl(address impl, uint16 version) public onlyAdmin {
     require(impl != address(0), "impl address can not be 0x");
     require(version != 0, "impl address can not be 0");
-    versions[impl] = version;
-    impls[version] = impl;
+    _versions[impl] = version;
+    _impls[version] = impl;
     emit BoxTemplateAdded(impl, version);
   }
 
@@ -48,7 +56,7 @@ contract ProxyDeployer {
 
   function deployBoxWithProxy(address _creator, uint16 version) public returns(address) {
 
-    address impl = impls[version];
+    address impl = _impls[version];
 
     // deploy a proxy pointing to Box impl
     bytes memory data = abi.encodeWithSignature('initialize(address)', _creator);
@@ -63,7 +71,7 @@ contract ProxyDeployer {
     require(_proxyAddress != address(0), "proxy can not be 0x");
     require( isBoxProxyManager(_proxyAddress, msg.sender) == true, 'you are not a proxy manager');
 
-    address impl = impls[version];
+    address impl = _impls[version];
     TransparentUpgradeableProxy proxy = TransparentUpgradeableProxy(_proxyAddress);
     proxyAdmin.upgrade(proxy, impl);
 

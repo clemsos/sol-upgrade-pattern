@@ -42,6 +42,7 @@ describe.only("ProxyDeployer", function () {
     ).to.be.revertedWith("caller does not have deployer rights");
     
   })
+
   it("Should store impls properly", async function () {
 
     // make sure everything is stored properly
