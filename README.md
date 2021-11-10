@@ -13,3 +13,7 @@ Two main deployer contracts are available:
 ```shell
 yarn hardhat test
 ```
+
+### TODO:
+
+- deploy transparent proxies and proxy admins using clone2
