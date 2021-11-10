@@ -12,7 +12,7 @@ interface IBox {
 
     function version() external view returns (uint256);
 
-    function increment() external view returns (uint256);
+    function increment() external returns (uint256);
 
     // roles
     function BOX_MANAGER_ROLE() external pure returns (bytes32);

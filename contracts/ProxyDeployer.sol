@@ -14,7 +14,7 @@ contract ProxyDeployer {
 
   // Events
   event BoxCreated(address indexed newBoxAddress);
-  event BoxUpgraded(address indexed newBoxAddress);
+  event BoxUpgraded(address indexed boxAddress);
   event ProxyAdminDeployed(address indexed newProxyAdminAddress);
 
   address public proxyAdminAddress;
