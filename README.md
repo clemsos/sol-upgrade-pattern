@@ -1,15 +1,15 @@
-# Basic Sample Hardhat Project
+# Solidity Upgrade patterns
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, a sample script that deploys that contract, and an example of a task implementation, which simply lists the available accounts.
+A simple repo to demonstrate varioous patterns to deploy contracts from a contract in Solidity.
 
-Try running some of the following tasks:
+Two main deployer contracts are available:
+
+- `DummyDeployer` : deploy 3rd part contracts from a `Deployer` contract
+- `ProxyDeployer` : deploy a contract through openzeppelin's [`TransparentUpgradeableProxy`](https://docs.openzeppelin.com/contracts/4.x/api/proxy#TransparentUpgradeableProxy) from a `Deployer` contract
+
+
+### Run the tests
 
 ```shell
-npx hardhat accounts
-npx hardhat compile
-npx hardhat clean
-npx hardhat test
-npx hardhat node
-node scripts/sample-script.js
-npx hardhat help
+yarn hardhat test
 ```

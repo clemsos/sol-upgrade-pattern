@@ -2,7 +2,7 @@ const { expect, assert } = require("chai");
 const { ethers } = require("hardhat");
 const { boxWorks, updatedBoxWorks } = require("./helpers");
 
-describe.only("Upgrades", function () {
+describe("Upgrades", function () {
   let deployer
   let Deployer
   let box
