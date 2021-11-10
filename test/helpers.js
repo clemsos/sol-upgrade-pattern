@@ -1,7 +1,7 @@
 const { ethers } = require("hardhat");
 const { expect } = require("chai");
 
-const boxWorks = async (tx) => {
+const boxWorks = async (tx, _signer) => {
   const { events } = await tx.wait()
 
   // check if box instance exists
@@ -10,7 +10,8 @@ const boxWorks = async (tx) => {
 
   // check if box instance works
   const [, creator] = await ethers.getSigners()
-  const newBox = await ethers.getContractAt("IBox", newBoxAddress, creator)
+  const signer = _signer || creator
+  const newBox = await ethers.getContractAt("IBox", newBoxAddress, signer)
   const txStore = await newBox.store(12)
   await txStore.wait()
   expect(await newBox.retrieve()).to.equal(12);
@@ -18,7 +19,7 @@ const boxWorks = async (tx) => {
   return newBox
 }
 
-const updatedBoxWorks = async (tx) => {
+const updatedBoxWorks = async (tx, _signer)  => {
   const { events } = await tx.wait()
 
   // check if box instance works
@@ -27,7 +28,8 @@ const updatedBoxWorks = async (tx) => {
 
   // check if box instance works
   const [, creator] = await ethers.getSigners()
-  let box = await ethers.getContractAt("IBox", boxAddress, creator);
+  const signer = _signer || creator
+  let box = await ethers.getContractAt("IBox", boxAddress, signer);
   expect(await box.retrieve()).to.equal(12);
   expect(await box.version()).to.equal(2);
 

@@ -19,10 +19,9 @@ contract ProxyDeployer {
   
   event BoxTemplateAdded(address indexed impl, uint16 indexed version);
 
-  //
+  // proxys
   address public proxyAdminAddress;
   BoxProxyAdmin private proxyAdmin;
-  TransparentUpgradeableProxy proxy;
 
   // templates
   mapping(address => uint16) public versions;
@@ -40,13 +39,6 @@ contract ProxyDeployer {
     emit BoxTemplateAdded(impl, version);
   }
 
-  function changeProxyAdmin(address _proxyAdminAddress) public {
-    // store proxyAdmin address
-    require(_proxyAdminAddress != address(0), "proxyAdmin address can not be 0x");
-    proxyAdminAddress = _proxyAdminAddress;
-    proxyAdmin = BoxProxyAdmin(_proxyAdminAddress);
-  }
-  
   function _deployProxyAdmin() private returns(address) {
     proxyAdmin = new BoxProxyAdmin();
     proxyAdminAddress = address(proxyAdmin);
@@ -60,38 +52,27 @@ contract ProxyDeployer {
 
     // deploy a proxy pointing to Box impl
     bytes memory data = abi.encodeWithSignature('initialize(address)', _creator);
-    proxy = new TransparentUpgradeableProxy(impl, proxyAdminAddress, data);
+    TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(impl, proxyAdminAddress, data);
 
     // notify
     emit BoxCreated(address(proxy));
     return address(proxy);
   }
 
-  function upgradeBox(uint16 version) public proxyIsSet onlyBoxProxyManager returns(address){
-    require(address(proxy) != address(0), "proxy not set");
-    // check perms
-    require( isBoxProxyManager(msg.sender) == true, 'you are not a BoxProxy manager');
+  function upgradeBox(address payable _proxyAddress, uint16 version) public returns(address){
+    require(_proxyAddress != address(0), "proxy can not be 0x");
+    require( isBoxProxyManager(_proxyAddress, msg.sender) == true, 'you are not a BoxProxy manager');
 
     address impl = impls[version];
+    TransparentUpgradeableProxy proxy = TransparentUpgradeableProxy(_proxyAddress);
     proxyAdmin.upgrade(proxy, impl);
 
     emit BoxUpgraded(address(proxy));
     return address(proxy);
   }
 
-  function isBoxProxyManager(address _sender) public view returns (bool){
-    IBox box = IBox(address(proxy));
+  function isBoxProxyManager(address _proxyAddress, address _sender) public view returns (bool){
+    IBox box = IBox(_proxyAddress);
     return box.isBoxManager(_sender);
   }
-
-  modifier proxyIsSet() {
-    require(address(proxy) != address(0), "proxy not set");
-    _;
-  }
-
-  modifier onlyBoxProxyManager() {
-    require( isBoxProxyManager(msg.sender) == true, 'you are not a BoxProxy manager');
-    _;
-  }
-
 }

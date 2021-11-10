@@ -2,7 +2,7 @@ const { expect, assert } = require("chai");
 const { ethers } = require("hardhat");
 const { boxWorks, updatedBoxWorks } = require("./helpers");
 
-describe.only("Upgrades", function () {
+describe("ProxyDeployer", function () {
   let deployer
   let Deployer
   let box
@@ -73,15 +73,16 @@ describe.only("Upgrades", function () {
 
   it("Should fails to upgrade without proxy", async function () {
     await expect(
-      deployer.upgradeBox(2)
-    ).to.be.revertedWith("proxy not set");
+      deployer.upgradeBox(ethers.constants.AddressZero, 2)
+    ).to.be.revertedWith("proxy can not be 0x");
   });
 
   it("Should disallow non-managers to upgrade", async function () {
     const [, , signer] = await ethers.getSigners()
-    await deployer.deployBoxWithProxy(creator.address, 1)
+    const tx = await deployer.deployBoxWithProxy(creator.address, 1)
+    const proxy = await boxWorks(tx)
     await expect(
-      deployer.connect(signer).upgradeBox(2)
+      deployer.connect(signer).upgradeBox(proxy.address, 2)
     ).to.be.revertedWith("you are not a BoxProxy manager");
   });
   
@@ -108,9 +109,31 @@ describe.only("Upgrades", function () {
 
   it("Should allow managers to upgrade", async function () {
     const initTx = await deployer.deployBoxWithProxy(creator.address, 1)
-    await boxWorks(initTx)
-    const tx = await deployer.connect(creator).upgradeBox(2)
+    const proxy = await boxWorks(initTx)
+    const tx = await deployer.connect(creator).upgradeBox(proxy.address, 2)
     await updatedBoxWorks(tx)
+  });
+  
+  it("Should allow multiple boxes to be deployed", async function () {
+    const [, creator, creator2, creator3] = await ethers.getSigners()
+
+    // first
+    const initTx = await deployer.deployBoxWithProxy(creator.address, 1)
+    const box1 = await boxWorks(initTx)
+    const tx = await deployer.connect(creator).upgradeBox(box1.address, 2)
+    await updatedBoxWorks(tx)
+    
+    // 2nd
+    const initTx2 = await deployer.connect(creator2).deployBoxWithProxy(creator2.address, 1)
+    const box2 = await boxWorks(initTx2, creator2)
+    const tx2 = await deployer.connect(creator2).upgradeBox(box2.address, 2)
+    await updatedBoxWorks(tx2, creator2)
+    
+    // 3rd
+    const initTx3 = await deployer.connect(creator3).deployBoxWithProxy(creator3.address, 1)
+    const box3 = await boxWorks(initTx3, creator3)
+    const tx3 = await deployer.connect(creator3).upgradeBox(box3.address, 2)
+    await updatedBoxWorks(tx3, creator3)
   });
 
 })
