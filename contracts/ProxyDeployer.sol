@@ -43,7 +43,7 @@ contract ProxyDeployer is Initializable {
   
   function addImpl(address impl, uint16 version) public onlyAdmin {
     require(impl != address(0), "impl address can not be 0x");
-    require(version != 0, "impl address can not be 0");
+    require(version != 0, "version can not be 0");
     require(_versions[impl] == 0, "address already used by another version");
     require(_impls[version] == address(0), "version already assigned");
 
