@@ -25,6 +25,7 @@ contract ProxyDeployer {
   // templates
   mapping(address => uint16) private _versions;
   mapping(uint16 => address) private _impls;
+  uint16 public latestVersion;
 
   constructor() {
     _deployProxyAdmin();
@@ -42,8 +43,12 @@ contract ProxyDeployer {
   function addImpl(address impl, uint16 version) public onlyAdmin {
     require(impl != address(0), "impl address can not be 0x");
     require(version != 0, "impl address can not be 0");
+    require(_versions[impl] == 0, "address already used by another version");
+    require(_impls[version] == address(0), "version already assigned");
+
     _versions[impl] = version;
     _impls[version] = impl;
+    if (latestVersion < version) latestVersion = version;
     emit BoxTemplateAdded(impl, version);
   }
 
@@ -54,9 +59,9 @@ contract ProxyDeployer {
     return address(proxyAdmin);
   }
 
-  function deployBoxWithProxy(address _creator, uint16 version) public returns(address) {
-
-    address impl = _impls[version];
+  function deployBoxWithProxy(address _creator) public returns(address) {
+    // default to latest implementation
+    address impl = _impls[latestVersion];
 
     // deploy a proxy pointing to Box impl
     bytes memory data = abi.encodeWithSignature('initialize(address)', _creator);
