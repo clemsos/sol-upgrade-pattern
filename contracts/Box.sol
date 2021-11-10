@@ -8,7 +8,6 @@ contract Box is Initializable, BoxManagerRole {
     uint256 private _value;
 
     function initialize(address _creator) public initializer() {
-        // owner of the contract logic
         BoxManagerRole._initialize(_creator);
     }
 

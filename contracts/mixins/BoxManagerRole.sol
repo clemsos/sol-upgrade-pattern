@@ -11,13 +11,12 @@ contract BoxManagerRole is AccessControlUpgradeable {
   
   bytes32 public constant BOX_MANAGER_ROLE = keccak256("BOX_MANAGER");
 
-
   function _initialize(address sender) public {
     // allow add other proxy managers
     _setRoleAdmin(BOX_MANAGER_ROLE, BOX_MANAGER_ROLE);
     // setup roles    
     if (!isBoxManager(sender)) {
-      _setupRole(BOX_MANAGER_ROLE, sender);  
+      _setupRole(BOX_MANAGER_ROLE, sender);
     }
   }
 
