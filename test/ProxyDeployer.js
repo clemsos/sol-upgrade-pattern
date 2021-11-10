@@ -1,8 +1,8 @@
 const { expect, assert } = require("chai");
-const { ethers } = require("hardhat");
+const { ethers, upgrades } = require("hardhat");
 const { boxWorks, updatedBoxWorks } = require("./helpers");
 
-describe.only("ProxyDeployer", function () {
+describe("ProxyDeployer", function () {
   let deployer
   let Deployer
   let box
@@ -29,7 +29,7 @@ describe.only("ProxyDeployer", function () {
     
     // deploy main contract
     Deployer = await ethers.getContractFactory("ProxyDeployer");
-    deployer = await Deployer.deploy();
+    deployer = await upgrades.deployProxy(Deployer)
     await deployer.deployed();
 
     const tx = await deployer.addImpl(box.address, 1)
@@ -199,6 +199,28 @@ describe.only("ProxyDeployer", function () {
     // upgrade 3
     const tx3 = await deployer.connect(creator3).upgradeBox(box3.address, 3)
     await updatedBoxWorks(tx3, creator3)
+  });
+  
+  it.only("Should continue to work after deployer was upgraded", async function () {
+
+    const initTx = await deployer.deployBoxWithProxy(creator.address)
+    const box1 = await boxWorks(initTx)
+
+    // make deployer upgrade
+    const ProxyDeployerV2 = await ethers.getContractFactory('ProxyDeployerV2')
+    deployerV2 = await upgrades.upgradeProxy(deployer.address, ProxyDeployerV2)
+
+    // make sure upgrade was successful
+    expect(await deployerV2.sayHello()).to.equals('hello world')
+
+    // test again
+    await boxWorks(initTx)
+
+    // make a box upgrade
+    const txImpl = await deployerV2.addImpl(boxV2.address, 2)
+    await txImpl.wait()
+    const tx = await deployerV2.connect(creator).upgradeBox(box1.address, 2)
+    await updatedBoxWorks(tx)
   });
 
 })

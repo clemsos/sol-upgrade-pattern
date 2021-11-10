@@ -6,8 +6,9 @@ import 'hardhat/console.sol';
 
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-contract ProxyDeployer {
+contract ProxyDeployer is Initializable {
 
   // Events
   event BoxCreated(address indexed newBoxAddress);
@@ -27,7 +28,7 @@ contract ProxyDeployer {
   mapping(uint16 => address) private _impls;
   uint16 public latestVersion;
 
-  constructor() {
+  function initialize() public initializer {
     _deployProxyAdmin();
     _admin = msg.sender;
   }
