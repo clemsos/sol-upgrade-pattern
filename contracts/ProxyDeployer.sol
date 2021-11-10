@@ -16,6 +16,8 @@ contract ProxyDeployer {
   
   event BoxTemplateAdded(address indexed impl, uint16 indexed version);
 
+  address private _admin;
+
   // proxys
   address public proxyAdminAddress;
   ProxyAdmin private proxyAdmin;
@@ -26,9 +28,10 @@ contract ProxyDeployer {
 
   constructor() {
     _deployProxyAdmin();
+    _admin = msg.sender;
   }
   
-  function addImpl(address impl, uint16 version) public {
+  function addImpl(address impl, uint16 version) public onlyAdmin {
     require(impl != address(0), "impl address can not be 0x");
     require(version != 0, "impl address can not be 0");
     versions[impl] = version;
@@ -71,5 +74,10 @@ contract ProxyDeployer {
   function isBoxProxyManager(address _proxyAddress, address _sender) public view returns (bool){
     IBox box = IBox(_proxyAddress);
     return box.isBoxManager(_sender);
+  }
+
+  modifier onlyAdmin() {
+    require( _admin == msg.sender, 'caller does not have deployer rights');
+    _;
   }
 }

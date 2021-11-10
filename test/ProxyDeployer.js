@@ -2,7 +2,7 @@ const { expect, assert } = require("chai");
 const { ethers } = require("hardhat");
 const { boxWorks, updatedBoxWorks } = require("./helpers");
 
-describe("ProxyDeployer", function () {
+describe.only("ProxyDeployer", function () {
   let deployer
   let Deployer
   let box
@@ -35,6 +35,13 @@ describe("ProxyDeployer", function () {
     await tx2.wait()
   })
 
+  it("Should forbid non-admin to add impl", async function () {
+    const [, , signer] = await ethers.getSigners()
+    await expect(
+      deployer.connect(signer).addImpl(box.address, 3)
+    ).to.be.revertedWith("caller does not have deployer rights");
+    
+  })
   it("Should store impls properly", async function () {
 
     // make sure everything is stored properly
@@ -72,6 +79,12 @@ describe("ProxyDeployer", function () {
   });
 
   it("Should fails to upgrade without proxy", async function () {
+    await expect(
+      deployer.upgradeBox(ethers.constants.AddressZero, 2)
+    ).to.be.revertedWith("proxy can not be 0x");
+  });
+  
+  it("Should forbid to deploy without proxy", async function () {
     await expect(
       deployer.upgradeBox(ethers.constants.AddressZero, 2)
     ).to.be.revertedWith("proxy can not be 0x");
