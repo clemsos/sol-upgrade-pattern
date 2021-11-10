@@ -31,7 +31,7 @@ contract ProxyDeployer {
   constructor() {
     _deployProxyAdmin();
   }
-
+  
   function addImpl(address impl, uint16 version) public {
     require(impl != address(0), "impl address can not be 0x");
     require(version != 0, "impl address can not be 0");
@@ -39,10 +39,6 @@ contract ProxyDeployer {
     impls[version] = impl;
     emit BoxTemplateAdded(impl, version);
   }
-
-  // function _getImpl(uint16 version) private returns(address) {
-  //   return impls[version];
-  // }
 
   function changeProxyAdmin(address _proxyAdminAddress) public {
     // store proxyAdmin address
