@@ -16,14 +16,33 @@ contract ProxyDeployer {
   event BoxCreated(address indexed newBoxAddress);
   event BoxUpgraded(address indexed boxAddress);
   event ProxyAdminDeployed(address indexed newProxyAdminAddress);
+  
+  event BoxTemplateAdded(address indexed impl, uint16 indexed version);
 
+  //
   address public proxyAdminAddress;
   BoxProxyAdmin private proxyAdmin;
   TransparentUpgradeableProxy proxy;
 
+  // templates
+  mapping(address => uint16) public versions;
+  mapping(uint16 => address) public impls;
+
   constructor() {
     _deployProxyAdmin();
   }
+
+  function addImpl(address impl, uint16 version) public {
+    require(impl != address(0), "impl address can not be 0x");
+    require(version != 0, "impl address can not be 0");
+    versions[impl] = version;
+    impls[version] = impl;
+    emit BoxTemplateAdded(impl, version);
+  }
+
+  // function _getImpl(uint16 version) private returns(address) {
+  //   return impls[version];
+  // }
 
   function changeProxyAdmin(address _proxyAdminAddress) public {
     // store proxyAdmin address
@@ -32,7 +51,6 @@ contract ProxyDeployer {
     proxyAdmin = BoxProxyAdmin(_proxyAdminAddress);
   }
   
-  // deploy from contract to prevent 'Ownable: caller is not the owner' error
   function _deployProxyAdmin() private returns(address) {
     proxyAdmin = new BoxProxyAdmin();
     proxyAdminAddress = address(proxyAdmin);
@@ -40,7 +58,10 @@ contract ProxyDeployer {
     return address(proxyAdmin);
   }
 
-  function deployBoxWithProxy(address _creator, address impl ) public returns(address) {
+  function deployBoxWithProxy(address _creator, uint16 version) public returns(address) {
+
+    address impl = impls[version];
+
     // deploy a proxy pointing to Box impl
     bytes memory data = abi.encodeWithSignature('initialize(address)', _creator);
     proxy = new TransparentUpgradeableProxy(impl, proxyAdminAddress, data);
@@ -50,12 +71,12 @@ contract ProxyDeployer {
     return address(proxy);
   }
 
-  function upgradeBox(address impl) public proxyIsSet onlyBoxProxyManager returns(address){
+  function upgradeBox(uint16 version) public proxyIsSet onlyBoxProxyManager returns(address){
     require(address(proxy) != address(0), "proxy not set");
-
     // check perms
     require( isBoxProxyManager(msg.sender) == true, 'you are not a BoxProxy manager');
- 
+
+    address impl = impls[version];
     proxyAdmin.upgrade(proxy, impl);
 
     emit BoxUpgraded(address(proxy));
@@ -71,6 +92,7 @@ contract ProxyDeployer {
     require(address(proxy) != address(0), "proxy not set");
     _;
   }
+
   modifier onlyBoxProxyManager() {
     require( isBoxProxyManager(msg.sender) == true, 'you are not a BoxProxy manager');
     _;
