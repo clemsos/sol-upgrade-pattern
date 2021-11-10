@@ -25,7 +25,7 @@ contract Box is Initializable, BoxManagerRole {
         return _value;
     }
 
-    function version() public pure returns (uint256) {
+    function version() public pure returns (uint16) {
         return 1;
     }
 }

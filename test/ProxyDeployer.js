@@ -128,6 +128,18 @@ describe.only("ProxyDeployer", function () {
     await updatedBoxWorks(tx)
   });
   
+  it("Should forbid bump more than 1 version", async function () {
+    const tx = await deployer.deployBoxWithProxy(creator.address, 1)
+    const proxy = await boxWorks(tx)
+
+    const txImpl = await deployer.addImpl(box.address, 3)
+    await txImpl.wait()
+
+    await expect(
+      deployer.connect(creator).upgradeBox(proxy.address, 3)
+    ).to.be.revertedWith("version error: make sure version increments only 1");
+  });
+  
   it("Should allow multiple boxes to be deployed", async function () {
     const [, creator, creator2, creator3] = await ethers.getSigners()
 

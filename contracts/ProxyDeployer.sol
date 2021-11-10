@@ -71,6 +71,11 @@ contract ProxyDeployer {
     require(_proxyAddress != address(0), "proxy can not be 0x");
     require( isBoxProxyManager(_proxyAddress, msg.sender) == true, 'you are not a proxy manager');
 
+    // check version
+    IBox box = IBox(_proxyAddress);
+    uint16 currentVersion = box.version();
+    require( version == currentVersion + 1, 'version error: make sure version increments only 1');
+
     address impl = _impls[version];
     TransparentUpgradeableProxy proxy = TransparentUpgradeableProxy(_proxyAddress);
     proxyAdmin.upgrade(proxy, impl);
