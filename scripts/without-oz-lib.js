@@ -37,7 +37,6 @@ async function main() {
 
   // check box v2
   console.log(await proxiedBox.version())
-
 }
 
 main();
